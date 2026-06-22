@@ -73,14 +73,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "SIPBI - Aplikasi Pemeliharaan Irigasi" },
+      { title: "IriCost - Aplikasi Pemeliharaan Irigasi" },
       { name: "description", content: "Sistem Informasi Perhitungan Biaya Irigasi" },
       { name: "author", content: "Rifky Alwi" },
-      { property: "og:title", content: "SIPBI - Aplikasi Pemeliharaan Irigasi" },
+      { property: "og:title", content: "IriCost - Aplikasi Pemeliharaan Irigasi" },
       { property: "og:description", content: "Sistem Informasi Perhitungan Biaya Irigasi" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@SIPBI" },
+      { name: "twitter:site", content: "@IriCost" },
     ],
     links: [
       {
