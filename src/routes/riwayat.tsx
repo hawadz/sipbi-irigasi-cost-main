@@ -1,9 +1,10 @@
-import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { LayoutDashboard, BarChart3, Calculator as CalcIcon, History, Trash2, Clock, Menu, Download } from "lucide-react";
+import { Trash2, Clock, Menu, Download } from "lucide-react";
 import { formatIDR, TASKS, getAhspPrice, type BuildingKey } from "@/lib/aknop";
 import { getKategoriBiaya } from "./calculator";
 import { exportRAB } from "@/lib/exportExcel";
+import { Sidebar } from "@/components/Sidebar";
 
 export const Route = createFileRoute("/riwayat")({
   head: () => ({ meta: [{ title: "Riwayat - IriCost" }] }),
@@ -40,22 +41,28 @@ function RiwayatPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-gradient-hero overflow-x-hidden">
+    <div className="h-screen flex bg-gradient-hero overflow-hidden">
       <Sidebar isOpen={isSidebarOpen} />
       
-      <main className="flex-1 min-w-0 bg-background/50 transition-all duration-300">
-        <div className="border-b bg-background/70 backdrop-blur-md sticky top-0 z-30 p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-1.5 hover:bg-muted rounded-md transition-colors text-foreground">
-              <Menu className="h-5 w-5" />
-            </button>
-            <span className="text-sm font-medium text-muted-foreground">IriCost / Riwayat</span>
+      <main className="flex-1 min-w-0 bg-background/50 transition-all duration-300 overflow-y-auto relative">
+        <div className="border-b border-border/50 bg-background/70 backdrop-blur-md sticky top-0 z-30 print:hidden">
+          <div className="px-4 md:px-8 h-16 flex items-center justify-between">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground font-medium">
+              <button 
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+                className="p-1.5 -ml-1.5 hover:bg-muted rounded-md transition-colors text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                title="Buka/Tutup Sidebar"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+              <span>IriCost / Riwayat</span>
+            </div>
+            <Link to="/calculator" className="text-sm text-muted-foreground hover:text-foreground transition">Ke Calculator Hub →</Link>
           </div>
-          <Link to="/calculator" className="text-sm text-muted-foreground hover:text-foreground transition">Ke Calculator Hub →</Link>
         </div>
 
-        <div className="p-8 max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8">Riwayat Perhitungan</h1>
+        <div className="p-6 md:p-8 max-w-7xl mx-auto">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight mb-8">Riwayat Perhitungan</h1>
           
           {history.length === 0 ? (
             <div className="bg-card rounded-2xl border border-dashed border-border p-16 flex flex-col items-center justify-center text-center shadow-soft">
@@ -71,16 +78,16 @@ function RiwayatPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50 text-muted-foreground">
                     <tr>
-                      <th className="py-4 px-6 text-left border-b">Tanggal</th>
-                      <th className="py-4 px-6 text-left border-b">Daerah / Nomenklatur</th>
-                      <th className="py-4 px-6 text-left border-b">Bangunan</th>
-                      <th className="py-4 px-6 text-right border-b">Total Biaya</th>
-                      <th className="py-4 px-6 text-center border-b">Aksi</th>
+                      <th className="py-4 px-6 text-left border-b font-medium">Tanggal</th>
+                      <th className="py-4 px-6 text-left border-b font-medium">Daerah / Nomenklatur</th>
+                      <th className="py-4 px-6 text-left border-b font-medium">Bangunan</th>
+                      <th className="py-4 px-6 text-right border-b font-medium">Total Biaya</th>
+                      <th className="py-4 px-6 text-center border-b font-medium">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
                     {history.map((h) => (
-                      <tr key={h.id} className="border-b hover:bg-muted/30 transition">
+                      <tr key={h.id} className="border-b border-border hover:bg-muted/30 transition">
                         <td className="py-4 px-6 text-muted-foreground">{h.tanggal}</td>
                         <td className="py-4 px-6 font-medium text-foreground">{h.daerah || "-"} / {h.nomenklatur || "-"}</td>
                         <td className="py-4 px-6 text-foreground">{h.building}</td>
@@ -103,40 +110,5 @@ function RiwayatPage() {
         </div>
       </main>
     </div>
-  );
-}
-
-function Sidebar({ isOpen }: { isOpen?: boolean }) {
-  const path = useRouterState({ select: (s) => s.location.pathname });
-  const items = [
-    { to: "/", label: "Beranda", icon: LayoutDashboard },
-    { to: "/calculator", label: "Calculator RAB", icon: CalcIcon },
-    { to: "/analytics", label: "Analytics", icon: BarChart3 },
-    { to: "/riwayat", label: "Riwayat", icon: History },
-  ];
-  return (
-    <aside 
-      className={`hidden md:flex shrink-0 bg-sidebar text-sidebar-foreground flex-col border-sidebar-border print:hidden transition-all duration-300 ease-in-out overflow-hidden ${
-        isOpen ? "w-64 border-r" : "w-0 border-r-0"
-      }`}
-    >
-      <div className="w-64 p-6 flex flex-col h-full">
-        <Link to="/" className="flex items-center gap-2 font-bold text-xl mb-10 text-primary">
-          <span>IriCost</span>
-          <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_12px_var(--primary)]" />
-        </Link>
-        <nav className="flex flex-col gap-2">
-          {items.map((it, i) => {
-            const active = path === it.to;
-            return (
-              <Link key={i} to={it.to} className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all ${active ? "bg-primary/10 text-primary font-semibold" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"}`}>
-                <it.icon className={`h-4.5 w-4.5 ${active ? "text-primary" : ""}`} />
-                {it.label}
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
-    </aside>
   );
 }

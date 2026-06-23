@@ -1,12 +1,13 @@
-import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
-import { LayoutDashboard, BarChart3, Calculator as CalcIcon, History, AlertCircle, PieChart as PieIcon, TrendingUp, Menu } from "lucide-react";
+import { BarChart3, Calculator as CalcIcon, AlertCircle, PieChart as PieIcon, TrendingUp, Menu } from "lucide-react";
 import { TASKS, formatIDR, getAhspPrice, type BuildingKey } from "@/lib/aknop";
 import { getKategoriBiaya } from "./calculator";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell
 } from "recharts";
+import { Sidebar } from "@/components/Sidebar";
 
 export const Route = createFileRoute("/analytics")({
   head: () => ({
@@ -19,7 +20,7 @@ type Row = { panjang: number | ""; lebar: number | ""; tinggi: number | ""; harg
 
 function AnalyticsPage() {
   const [isClient, setIsClient] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // State untuk Sidebar
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const [daerah, setDaerah] = useState("-");
   const [nomenklatur, setNomenklatur] = useState("-");
@@ -28,7 +29,6 @@ function AnalyticsPage() {
 
   useEffect(() => {
     setIsClient(true);
-    // Kunci storage sudah disesuaikan dengan IriCost
     setDaerah(localStorage.getItem("iricost_daerah") || "-");
     setNomenklatur(localStorage.getItem("iricost_nomenklatur") || "-");
     setBuilding((localStorage.getItem("iricost_building") as BuildingKey) || "");
@@ -39,7 +39,6 @@ function AnalyticsPage() {
 
   const tasks = building ? TASKS[building] : [];
 
-  // Logika kalkulasi yang disamakan persis dengan Kalkulator (Diskon 20% & AHSP)
   const chartData = useMemo(() => {
     if (!building) return [];
     let data = tasks.map((t, i) => {
@@ -50,7 +49,6 @@ function AnalyticsPage() {
       
       let vol = t_val > 0 ? p * l * t_val : p * l;
 
-      // Aturan khusus: Pembongkaran dikali 20%
       const taskLower = t.toLowerCase();
       if (taskLower.includes("bongkar pasangan batu") || 
           taskLower.includes("pembongkaran pasangan batu") ||
@@ -62,7 +60,6 @@ function AnalyticsPage() {
         vol = vol * 0.2;
       }
 
-      // Integrasi AHSP
       const ahspPrice = getAhspPrice(t);
       const harga = ahspPrice > 0 ? ahspPrice : (Number(r.harga) || 0);
 
@@ -96,10 +93,10 @@ function AnalyticsPage() {
   if (!isClient) return null;
 
   return (
-    <div className="min-h-screen flex bg-gradient-hero overflow-x-hidden">
+    <div className="h-screen flex bg-gradient-hero overflow-hidden">
       <Sidebar isOpen={isSidebarOpen} />
 
-      <main className="flex-1 min-w-0 bg-background/50 transition-all duration-300">
+      <main className="flex-1 min-w-0 bg-background/50 transition-all duration-300 overflow-y-auto relative">
         <div className="border-b border-border/50 bg-background/70 backdrop-blur-md sticky top-0 z-30">
           <div className="px-4 md:px-8 h-16 flex items-center justify-between">
             <div className="flex items-center gap-3 text-sm text-muted-foreground font-medium">
@@ -110,7 +107,7 @@ function AnalyticsPage() {
               >
                 <Menu className="h-5 w-5" />
               </button>
-              <span>IriCost / Analytics</span>
+              <span>IriCost / Analisis</span>
             </div>
             <Link to="/calculator" className="text-sm text-muted-foreground hover:text-foreground transition">Ke Calculator Hub →</Link>
           </div>
@@ -209,48 +206,5 @@ function AnalyticsPage() {
         </div>
       </main>
     </div>
-  );
-}
-
-function Sidebar({ isOpen }: { isOpen?: boolean }) {
-  const path = useRouterState({ select: (s) => s.location.pathname });
-  const items = [
-    { to: "/", label: "Beranda", icon: LayoutDashboard },
-    { to: "/calculator", label: "Calculator RAB", icon: CalcIcon },
-    { to: "/analytics", label: "Analytics", icon: BarChart3 },
-    { to: "/riwayat", label: "Riwayat", icon: History },
-  ];
-  return (
-    <aside 
-      className={`hidden md:flex shrink-0 bg-sidebar text-sidebar-foreground flex-col border-sidebar-border print:hidden transition-all duration-300 ease-in-out overflow-hidden ${
-        isOpen ? "w-64 border-r" : "w-0 border-r-0"
-      }`}
-    >
-      <div className="w-64 p-6 flex flex-col h-full">
-        <Link to="/" className="flex items-center gap-2 font-bold text-xl mb-10 text-primary">
-          <span>IriCost</span>
-          <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_12px_var(--primary)]" />
-        </Link>
-        <nav className="flex flex-col gap-2">
-          {items.map((it, i) => {
-            const active = path === it.to;
-            return (
-              <Link 
-                key={i} 
-                to={it.to} 
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all ${
-                  active 
-                    ? "bg-primary/10 text-primary font-semibold" 
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                }`}
-              >
-                <it.icon className={`h-4.5 w-4.5 ${active ? "text-primary" : ""}`} />
-                {it.label}
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
-    </aside>
   );
 }
