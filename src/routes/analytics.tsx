@@ -20,7 +20,7 @@ type Row = { panjang: number | ""; lebar: number | ""; tinggi: number | ""; harg
 
 function AnalyticsPage() {
   const [isClient, setIsClient] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [daerah, setDaerah] = useState("-");
   const [nomenklatur, setNomenklatur] = useState("-");

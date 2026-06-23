@@ -13,7 +13,7 @@ export const Route = createFileRoute("/riwayat")({
 
 function RiwayatPage() {
   const [history, setHistory] = useState<any[]>([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("iricost_history");

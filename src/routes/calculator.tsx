@@ -44,7 +44,7 @@ export const getKategoriBiaya = (total: number) => {
 
 function CalculatorPage() {
   const search = Route.useSearch();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [daerah, setDaerah] = useState(() => {
     if (typeof window !== "undefined") return localStorage.getItem("iricost_daerah") || search.daerah || "";
