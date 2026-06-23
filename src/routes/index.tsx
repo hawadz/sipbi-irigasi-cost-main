@@ -186,7 +186,6 @@ function Landing() {
       {/* FOOTER */}
       <footer className="py-8 text-center text-xs md:text-sm text-muted-foreground flex flex-col gap-1.5 border-t border-border/40">
         <p>© 2026 IriCost - Analisis Perhitungan Biaya Pemeliharaan Bangunan Pelengkap Irigasi</p>
-        <p className="opacity-75">Program Studi Teknik Sipil - Universitas Muhammadiyah Sukabumi</p>
       </footer>
     </div>
   );
