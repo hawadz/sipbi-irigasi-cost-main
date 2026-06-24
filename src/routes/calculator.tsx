@@ -44,7 +44,7 @@ export const getKategoriBiaya = (total: number) => {
 
 function CalculatorPage() {
   const search = Route.useSearch();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Default tertutup
 
   const [daerah, setDaerah] = useState(() => {
     if (typeof window !== "undefined") return localStorage.getItem("iricost_daerah") || search.daerah || "";
@@ -98,6 +98,7 @@ function CalculatorPage() {
     toast.info("Angka perhitungan telah direset.");
   };
 
+  // LOGIKA RUMUS MATEMATIKA SIPIL
   const calculateVolume = (taskName: string, r?: Row) => {
     if (!r) return { vol: 0, unit: "m³", isDiscounted: false };
     
@@ -150,7 +151,9 @@ function CalculatorPage() {
         break;
       case "Balok":
       default:
-        vol = P * L * T;
+        // JIKA TINGGI DIISI, HITUNG VOLUME (P x L x T). JIKA KOSONG, HITUNG LUAS (P x L)
+        vol = T > 0 ? P * L * T : P * L;
+        unit = T > 0 ? "m³" : "m²";
         break;
     }
 
@@ -161,7 +164,7 @@ function CalculatorPage() {
       isDiscounted = true;
     }
 
-    return { vol: Number(vol.toFixed(2)), unit, isDiscounted };
+    return { vol: Number(vol.toFixed(3)), unit, isDiscounted };
   };
 
   const total = useMemo(() => {
@@ -182,13 +185,14 @@ function CalculatorPage() {
     }
     const toastId = toast.loading("Menyiapkan file Excel RAB...");
     try {
+      // FILTER EXCEL: HANYA EXPORT YANG VOLUMENYA LEBIH DARI 0
       const itemsToExport = tasks.map((t, i) => {
         const r = rows[i] ?? { panjang: "", lebar: "", tinggi: "", harga: "" };
         const { vol, unit } = calculateVolume(t, r);
         const ahspPrice = getAhspPrice(t);
         const harga = ahspPrice > 0 ? ahspPrice : (Number(r.harga) || 0);
         return { uraian: t, satuan: unit, volume: vol, hargaSatuan: harga, jumlahBiaya: vol * harga };
-      });
+      }).filter(item => item.volume > 0);
 
       await exportRAB(daerah, nomenklatur, building, kategori.label, itemsToExport, total);
 
@@ -214,7 +218,6 @@ function CalculatorPage() {
     if (e.key === '-' || e.key === 'e') e.preventDefault();
   };
 
-  // Komponen Input Dimensi yang distandarisasi ukurannya
   const InputCell = ({ idx, field, label }: { idx: number, field: keyof Row, label: string }) => (
     <div className="flex flex-col gap-1 w-28 shrink-0">
       <label className="text-[10px] text-muted-foreground font-medium truncate">{label}</label>
@@ -288,7 +291,7 @@ function CalculatorPage() {
                       <tr>
                         <th className="text-left py-3 px-4 font-medium w-12 border-b">No</th>
                         <th className="text-left py-3 px-4 font-medium min-w-[220px] border-b">Rincian Pekerjaan</th>
-                        <th className="text-left py-3 px-4 font-medium min-w-[500px] border-b">Parameter Dimensi</th>
+                        <th className="text-left py-3 px-4 font-medium min-w-[500px] border-b print:hidden">Parameter Dimensi</th>
                         <th className="text-center py-3 px-4 font-medium w-36 border-b">Volume</th>
                         <th className="text-left py-3 px-4 font-medium w-36 border-b">Harga Satuan</th>
                         <th className="text-right py-3 px-5 font-medium w-36 border-b">Subtotal</th>
@@ -302,9 +305,12 @@ function CalculatorPage() {
                         const harga = ahspPrice > 0 ? ahspPrice : (Number(r?.harga) || 0);
                         const sub = vol * harga;
                         const bentuk = r?.bentuk || "Balok";
+                        
+                        // CLASS INI BIKIN BARIS YANG VOLUMENYA 0 HILANG SAAT DI-PRINT PDF!
+                        const isHiddenOnPrint = vol === 0 ? "print:hidden" : "";
 
                         return (
-                          <tr key={i} className="border-b border-border last:border-0 hover:bg-muted/20 transition print:border-gray-300">
+                          <tr key={i} className={`border-b border-border last:border-0 hover:bg-muted/20 transition print:border-gray-300 ${isHiddenOnPrint}`}>
                             <td className="py-4 px-4 text-muted-foreground align-top pt-5">{i + 1}</td>
                             
                             <td className="py-4 px-4 text-foreground font-medium align-top pt-4">
@@ -332,8 +338,8 @@ function CalculatorPage() {
                               {isDiscounted && <div className="text-[9px] text-amber-500 font-semibold mt-1.5">*Vol otomatis × 20%</div>}
                             </td>
                             
-                            {/* KOLOM PARAMETER DIMENSI */}
-                            <td className="py-4 px-4 align-top pt-4">
+                            {/* KOLOM PARAMETER DIMENSI DIHILANGKAN SAAT PRINT AGAR RAPI */}
+                            <td className="py-4 px-4 align-top pt-4 print:hidden">
                               <div className="flex flex-wrap gap-3">
                                 {(bentuk === "Balok" || bentuk === "Prisma" || bentuk === "Segitiga") && (
                                   <><InputCell idx={i} field="panjang" label="P (m)" /><InputCell idx={i} field="lebar" label="L (m)" /><InputCell idx={i} field="tinggi" label="T (m)" /></>
@@ -364,16 +370,15 @@ function CalculatorPage() {
                               </div>
                             </td>
 
-                            {/* OUTPUT / MANUAL VOLUME DENGAN SPACER LABEL */}
-                            <td className="py-4 px-4 text-center bg-muted/10 align-top pt-4">
-                              <div className="flex flex-col gap-1 w-28 mx-auto shrink-0">
-                                <label className="text-[10px] opacity-0 select-none block">Spacer</label>
+                            <td className="py-4 px-4 text-center bg-muted/10 align-top pt-4 print:bg-transparent print:pt-5">
+                              <div className="flex flex-col gap-1 w-28 mx-auto shrink-0 print:w-full">
+                                <label className="text-[10px] opacity-0 select-none block print:hidden">Spacer</label>
                                 {bentuk === "Manual" ? (
                                   <input 
                                     type="number" min="0" onKeyDown={preventMinus} 
                                     value={r?.volumeManual ?? ""} 
                                     onChange={(e) => handleChange(i, "volumeManual", e.target.value ? Number(e.target.value) : "")} 
-                                    className="w-full h-9 rounded-md border border-primary bg-background px-2 py-1 text-xs text-center outline-none focus:ring-2 focus:ring-primary/40 shadow-sm" 
+                                    className="w-full h-9 rounded-md border border-primary bg-background px-2 py-1 text-xs text-center outline-none focus:ring-2 focus:ring-primary/40 shadow-sm print:border-none print:p-0 print:bg-transparent" 
                                     placeholder="Isi Vol" 
                                   />
                                 ) : (
@@ -385,10 +390,9 @@ function CalculatorPage() {
                               </div>
                             </td>
 
-                            {/* HARGA SATUAN DENGAN UKURAN PERSIS SAMA (w-28, h-9) */}
-                            <td className="py-4 px-4 align-top pt-4">
-                              <div className="flex flex-col gap-1 w-28 shrink-0">
-                                <label className="text-[10px] opacity-0 select-none block">Spacer</label>
+                            <td className="py-4 px-4 align-top pt-4 print:pt-5">
+                              <div className="flex flex-col gap-1 w-28 shrink-0 print:w-full">
+                                <label className="text-[10px] opacity-0 select-none block print:hidden">Spacer</label>
                                 {ahspPrice > 0 ? (
                                   <div className="w-full h-9 flex items-center px-3 text-xs font-semibold text-primary bg-primary/5 rounded-md border border-primary/20 print:border-none print:bg-transparent print:p-0 print:text-black">
                                     {formatIDR(ahspPrice)}
@@ -398,17 +402,16 @@ function CalculatorPage() {
                                     type="number" min="0" onKeyDown={preventMinus} 
                                     value={r?.harga ?? ""} 
                                     onChange={(e) => handleChange(i, "harga", e.target.value ? Number(e.target.value) : "")} 
-                                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-ring/40" 
+                                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-ring/40 print:border-none print:p-0 print:bg-transparent" 
                                     placeholder="Rp 0" 
                                   />
                                 )}
                               </div>
                             </td>
 
-                            {/* SUBTOTAL DENGAN SPACER LABEL */}
-                            <td className="py-4 px-5 text-right align-top pt-4">
+                            <td className="py-4 px-5 text-right align-top pt-4 print:pt-5">
                               <div className="flex flex-col gap-1 w-full shrink-0">
-                                <label className="text-[10px] opacity-0 select-none block">Spacer</label>
+                                <label className="text-[10px] opacity-0 select-none block print:hidden">Spacer</label>
                                 <div className="w-full h-9 flex items-center justify-end font-bold text-foreground tabular-nums print:text-black">
                                   {formatIDR(sub)}
                                 </div>
